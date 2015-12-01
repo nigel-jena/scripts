@@ -1,0 +1,28 @@
+#script must be run from London to backup phabricator                                                                                                                                                                                  
+
+YEAR=`date +%Y`
+MONTH=`date +%m`
+DAY=`date +%d`
+HOUR=`date +%H`
+MINS=`date +%M`
+
+DATE_STAMP=${YEAR}_${MONTH}_${DAY}_${HOUR}_${MINS}
+
+LOCAL_BACKUP_DIR=/home/nigel/backup/phabricator.webbox.co.za/
+BACKUP_DIR=/home/nigel/backup/phabricator.webbox.co.za
+FILE_NAME=phabricator_backup
+REMOTE_FILE=${BACKUP_DIR}/${FILE_NAME}.tar.gz
+LOCAL_FILE=${LOCAL_BACKUP_DIR}/${FILE_NAME}.tar.gz
+LOCAL_DATED_BACKUP=${LOCAL_BACKUP_DIR}/${FILE_NAME}_${DATE_STAMP}.tar.gz
+SCP=/usr/bin/scp
+REMOTE_BACKUP=nigel@london3.webbox.co.za
+
+echo "************************** creating phabricator tar"
+cd;tar cvf ${BACKUP_DIR}/phabricator_${DATE_STAMP}.tar ~/code_review/phabricator ~/code_review/libphutil/ ~/code_review/arcanist/
+echo "************************** running mysqldump"
+cd; cd ~/code_review/phabricator; ./bin/storage dump > ${BACKUP_DIR}/${FILE_NAME}_${DATE_STAMP}.sql
+echo "************************** apending sql to tar ball"
+cd ${BACKUP_DIR} ;tar --append --file=phabricator_${DATE_STAMP}.tar ${FILE_NAME}_${DATE_STAMP}.sql
+echo "************************** compressing file"
+cd;cd $BACKUP_DIR ; gzip phabricator_${DATE_STAMP}.tar
+cd;cd $BACKUP_DIR ; $SCP phabricator_${DATE_STAMP}.tar.gz $REMOTE_BACKUP:/home/nigel/backup/phabricator.webbox.co.za/
